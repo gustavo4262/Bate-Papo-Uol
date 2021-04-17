@@ -20,24 +20,26 @@ body {
   font-size: 50px;
 }
 .content {
-  margin-top: 106px;
+  height: calc(100vh - 180px);
+  margin: 86px auto;
   display: flex;
   flex-direction: column;
+  overflow: scroll;
 }
-.message {
+.box {
   font-size: 14px;
   display: flex;
   align-items: center;
   padding: 13px 8px;
   margin-bottom: 4px;
 }
-.normal {
+.message {
   background-color: #ffffff;
 }
 .status {
   background-color: #dcdcdc;
 }
-.reserved {
+.private_message {
   background-color: #ffdede;
 }
 .time {
