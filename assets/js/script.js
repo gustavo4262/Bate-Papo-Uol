@@ -1,6 +1,7 @@
 let username = startSession();
 let intervalConn = setInterval(keepSession , 5000);
-let intervalMsg;
+let intervalMsg, intervalPart;
+let selection = {contacts: "Todos", visibility: "público"}
 
 function startSession(){
     let name = prompt("Digite seu nome");
@@ -13,17 +14,36 @@ function startSession(){
 }
 
 function enterSession(){
-    keepLoadMensages();
-    intervalMsg = setInterval(keepLoadMensages, 3000);
+    loadMessages();
+    intervalMsg = setInterval(loadMessages, 3000);
+    loadsParticipants();
+    intervalPart = setInterval(loadsParticipants, 10000);
 }
 
 function errorConn(){
     console.error();
-    startSession();
+    window.location.reload();
 }
 
 
-function loadMessages(messages){
+function keepSession(){
+    let msg = { name: username };
+    let server = "https://mock-api.bootcamp.respondeai.com.br/api/v2/uol/status";
+    let request = axios.post(server, msg);
+    request.catch( () => { clearInterval(intervalConn), clearInterval(intervalMsg)} );
+}
+
+function loadMessages(){
+    let server = "https://mock-api.bootcamp.respondeai.com.br/api/v2/uol/messages";
+    let request = axios.get(server);
+    request.then(updateMessages);
+    request.catch(errorConn);
+}
+
+function updateMessages(messages){
+    let content = document.querySelector(".content");
+    content.innerHTML = "";
+    
     messages.data.forEach(message => {
         let msgHTML;
         if(message.type === "status"){
@@ -44,7 +64,6 @@ function loadMessages(messages){
             <span><strong>${message.from}</strong> reservadamente para <strong>${message.to}</strong>: ${message.text}</span>
             </div>`;
         }
-        let content = document.querySelector(".content");
         content.innerHTML += msgHTML;
     });
 
@@ -53,32 +72,86 @@ function loadMessages(messages){
     
 }
 
-function keepSession(){
-    let msg = { name: username };
-    let server = "https://mock-api.bootcamp.respondeai.com.br/api/v2/uol/status";
-    let request = axios.post(server, msg);
-    request.catch( () => { clearInterval(intervalConn), clearInterval(intervalMsg)} );
+function toggleParticipantPage(){
+    let participantPage = document.querySelector(".participant-page");
+    participantPage.classList.toggle("hidden");
+    let obscured = document.querySelector(".obscured");
+    obscured.classList.toggle("hidden");
 }
 
-function keepLoadMensages(){
-    let server = "https://mock-api.bootcamp.respondeai.com.br/api/v2/uol/messages";
+function loadsParticipants(){
+    let server = "https://mock-api.bootcamp.respondeai.com.br/api/v2/uol/participants";
     let request = axios.get(server);
-    request.then(loadMessages);
+    request.then(updateParticipants);
     request.catch(errorConn);
 }
 
-function sendPublicMessage(){
+function updateParticipants(participants){
+    let partList = document.querySelector(".contacts");
+    let firstItem = partList.querySelector(":first-child");
+    Array.from(partList.children).forEach( item => {
+        console.log(item)
+        if (item != firstItem){
+            item.remove();
+        }
+    })
+
+    participants.data.forEach( part => {
+        let partHTML = `<div class="item" onclick="selectItem(this)">
+            <ion-icon name="person-circle"></ion-icon>
+            <h2>${part.name}</h2>
+        </div>`;
+        partList.innerHTML += partHTML;
+    })
+
+}
+
+function selectItem(element){
+    let elementSelected = element.querySelector("h2").innerHTML;
+    if( (elementSelected === "Reservadamente") && ( selection["contacts"] === "Todos") )
+        return;
+
+    let parent = element.parentNode;
+    console.log(parent)
+    Array.from(parent.children).forEach( item => {
+        let icon = item.querySelector("ion-icon:last-child");
+        try{
+            if (icon.classList.contains("selected")){
+                icon.remove();
+            }
+        }
+        catch(err){    
+        }
+    })
+    
+    let iconHTML = `<ion-icon name="checkmark-outline" class="selected"></ion-icon>`;
+    element.innerHTML += iconHTML;
+
+    selection[ parent.classList[0] ] = elementSelected.toLowerCase();
+
+    updateChatBox();
+}
+
+function updateChatBox(){
+    let textElement = document.querySelector(".chatbox span");
+    let text = `Enviando para ${selection["contacts"]} (${selection["visibility"]})`
+    textElement.innerHTML = text;
+}
+
+
+function sendMessage(){
     let server = "https://mock-api.bootcamp.respondeai.com.br/api/v2/uol/messages";
-    let destination = "Todos";
+    let type = "private_message";
+    if ( selection["visibility"] === "público" )
+        type = "message"
     let text = document.querySelector(".chatbox input").value;
     let msg = {
         from: username,
-        to: destination,
+        to: selection["contacts"],
         text: text,
-        type: "message"
+        type: type
     }
     let request = axios.post(server, msg);
     request.then(enterSession);
     request.catch(errorConn);
 }
-
