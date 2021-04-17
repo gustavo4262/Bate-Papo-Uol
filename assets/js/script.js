@@ -1,5 +1,6 @@
-let name = startSession();
+let username = startSession();
 let intervalConn = setInterval(keepSession , 5000);
+let intervalMsg;
 
 function startSession(){
     let name = prompt("Digite seu nome");
@@ -7,17 +8,16 @@ function startSession(){
     let server = "https://mock-api.bootcamp.respondeai.com.br/api/v2/uol/participants";
     let request = axios.post(server, msg);
     request.then(enterSession);
-    request.catch(errorEnterSession);
+    request.catch(errorConn);
     return name;
 }
 
 function enterSession(){
     keepLoadMensages();
-    let intervalMsg = setInterval(keepLoadMensages, 3000);
-    
+    intervalMsg = setInterval(keepLoadMensages, 3000);
 }
 
-function errorEnterSession(){
+function errorConn(){
     console.error();
     startSession();
 }
@@ -38,7 +38,7 @@ function loadMessages(messages){
             <span><strong>${message.from}</strong> para <strong>${message.to}</strong>: ${message.text}</span>
             </div>`;
         }
-        else if( (message.type === "private_message") && (message.to === name )){
+        else if( (message.type === "private_message") && (message.to === username )){
             msgHTML = `<div class="${message.type} box">
             <span class="time">${message.time}</span>
             <span><strong>${message.from}</strong> reservadamente para <strong>${message.to}</strong>: ${message.text}</span>
@@ -53,22 +53,32 @@ function loadMessages(messages){
     
 }
 
-function errorLoadMessages(){
-    window.location.reload;
-}
-
-
 function keepSession(){
-    let msg = { name: name };
+    let msg = { name: username };
     let server = "https://mock-api.bootcamp.respondeai.com.br/api/v2/uol/status";
     let request = axios.post(server, msg);
-    request.then( () => { } );
-    request.catch( () => { clearInterval(intervalConn)} );
+    request.catch( () => { clearInterval(intervalConn), clearInterval(intervalMsg)} );
 }
 
 function keepLoadMensages(){
     let server = "https://mock-api.bootcamp.respondeai.com.br/api/v2/uol/messages";
     let request = axios.get(server);
     request.then(loadMessages);
-    request.catch(errorLoadMessages);
+    request.catch(errorConn);
 }
+
+function sendPublicMessage(){
+    let server = "https://mock-api.bootcamp.respondeai.com.br/api/v2/uol/messages";
+    let destination = "Todos";
+    let text = document.querySelector(".chatbox input").value;
+    let msg = {
+        from: username,
+        to: destination,
+        text: text,
+        type: "message"
+    }
+    let request = axios.post(server, msg);
+    request.then(enterSession);
+    request.catch(errorConn);
+}
+
