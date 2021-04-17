@@ -1,11 +1,9 @@
 let name = startSession();
-setInterval(() => {keepConnection(name) }, 5000);
+let interval = setInterval(keepConnection , 5000);
 
 function startSession(){
     let name = prompt("Digite seu nome");
-    let msg = `{
-        name: "${name}"
-    }`
+    let msg = { name: name }
     let server = "https://mock-api.bootcamp.respondeai.com.br/api/v2/uol/participants";
     let request = axios.post(server, msg);
     console.log(msg);
@@ -20,16 +18,16 @@ function enterSession(){
 
 function errorEnterSession(){
     console.error();
+    startSession();
 }
 
-function keepConnection(name){
-    let msg = `{
-        name: "${name}"
-    }`;
+function keepConnection(){
+    let msg = { name: name }
+    console.log(msg)
     let server = "https://mock-api.bootcamp.respondeai.com.br/api/v2/uol/status";
     let request = axios.post(server, msg);
     request.then( () => {console.log("OK")} );
-    request.catch( () => {console.log("Saiu da sala")} );
+    request.catch( () => {console.log("Saiu da sala"), clearInterval(interval)} );
 }
 
 
